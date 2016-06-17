@@ -248,22 +248,30 @@ ffmpeg -re -i big_buck_bunny_720p_surround.avi -vcodec mpeg4 -an -b 1024k -s 640
 #### vMT Flow (2) 
 
 * Search the mac address you remembered in the previous command (02:12:00:00:00:00) on the Control node (running the vMT):
-```ovs-ofctl dump-flows br-int | grep 02:12:00:00:00:00```. Normally only one flow should appear as output, for example:```priority=20,in_port=319,dl_src=04:31:00:00:00:00/ff:ff:00:00:00:00,dl_dst=04:00:00:00:00:0,actions=mod_dl_src:00:90:27:22:d2:68,mod_dl_dst:b8:ae:ed:77:73:bc,output:773```
-* You need to take the actions from that flow. Add 2 more actions and mach it accordingly to create the following flow rule: ```ovs-ofctl add-flow br-int priority=21,in_port=<vMT eth0 port>,dl_type=0x0800,nw_proto=17,nw_src=<vMT eth0 IP>,nw_dst=10.50.0.2,dl_src=<vMT eth0 mac>,dl_dst=<GET PACKET DST MAC FROM TCPDUMP ETH0 IN vMT>,actions=mod_vlan_vid:401,mod_nw_src=10.50.0.1,mod_dl_src:00:90:27:22:d2:68,mod_dl_dst:b8:ae:ed:77:73:bc,output:773```* The final rule looks like this: ```ovs-ofctl add-flow br-int priority=21,in_port=769,dl_type=0x0800,nw_proto=17,nw_src=13.13.13.5,nw_dst=10.50.0.2,dl_src=fa:16:3e:58:9a:84,dl_dst=fa:16:3e:21:f8:8d,actions=mod_vlan_vid:401,mod_nw_src=10.50.0.1,mod_dl_src:00:90:27:22:d2:68,mod_dl_dst:b8:ae:ed:77:73:bc,output:773```
+```ovs-ofctl dump-flows br-int | grep 02:12:00:00:00:00```. Normally only one flow should appear as output, for example:
+```
+priority=20,in_port=319,dl_src=04:31:00:00:00:00/ff:ff:00:00:00:00,dl_dst=04:00:00:00:00:0,actions=mod_dl_src:00:90:27:22:d2:68,mod_dl_dst:b8:ae:ed:77:73:bc,output:773
+```
+
+* You need to take the actions from that flow. Add 2 more actions and mach it accordingly to create the following flow rule: 
+
+```ovs-ofctl add-flow br-int priority=21,in_port=<vMT eth0 port>,dl_type=0x0800,nw_proto=17,nw_src=<vMT eth0 IP>,nw_dst=10.50.0.2,dl_src=<vMT eth0 mac>,dl_dst=<GET PACKET DST MAC FROM TCPDUMP ETH0 IN vMT>,actions=mod_vlan_vid:401,mod_nw_src=10.50.0.1,mod_dl_src:00:90:27:22:d2:68,mod_dl_dst:b8:ae:ed:77:73:bc,output:773```
+* The final rule looks like this: 
+
+```ovs-ofctl add-flow br-int priority=21,in_port=769,dl_type=0x0800,nw_proto=17,nw_src=13.13.13.5,nw_dst=10.50.0.2,dl_src=fa:16:3e:58:9a:84,dl_dst=fa:16:3e:21:f8:8d,actions=mod_vlan_vid:401,mod_nw_src=10.50.0.1,mod_dl_src:00:90:27:22:d2:68,mod_dl_dst:b8:ae:ed:77:73:bc,output:773```
 * After the flows are installed, run the following command in the vMT to start the transcoding:
 
 ```
 ffmpeg -re -i udp:13.13.13.5:33334 -i watermark_xil.png -filter_complex "overlay=7*((main_w-overlay_w)/8):(main_h-overlay_h)/2" -vcodec mpeg4 -an -b:v 2048 -f mpegts udp:10.50.0.2:33334
 ```
+
 This command takes the video from the portIP 13.13.13.5 of eth0, adds a watermark and sends the video to destination IP: 10.50.0.2:33334. To change the watermark, replace the file watermark_xil.png. With T-Nova or Sesame logos:
 
 ```
 ffmpeg -re -i udp:13.13.13.5:33334 -i watermark_tnova_logo.jpg -filter_complex "overlay=7*((main_w-overlay_w)/8):(main_h-overlay_h)/2" -vcodec mpeg4 -an -b:v 2048 -f mpegts udp:10.50.0.2:33334
-
-ffmpeg -re -i udp:13.13.13.5:33334 -i watermark_sesame_logo.png -filter_complex "overlay=7*((main_w-overlay_w)/8):(main_h-overlay_h)/2" -vcodec mpeg4 -an -b:v 2048 -f mpegts udp:10.50.0.2:33334
 ```
 
-* To see video in User2 (10.50.0.2), connect with Teamviewer. PartnerID: 497 336 438. Password: 1ds9h3. Run the ffplayer and the video shloud appear with the watermark on it:
+* To see video in User2 (10.50.0.2), connect with Teamviewer. Run the ffplayer and the video shloud appear with the watermark on it:
 
 ```
 ffplay udp://10.50.0.2:33334```
