@@ -1,0 +1,8 @@
+[‘demo1-vnf_vMT_in_port-n2huebtcslwb', 'fa:16:3e:6f:d7:c9', '192.168.1.5', ' 934']
+['demo2-vnf_vMT_out_port-2hqh3jetq2ue', 'fa:16:3e:a8:e9:f9', '192.168.2.2', ' 947']
+['demo2-vnf_vSF_out_port-lx7qzjrkakh5', 'fa:16:3e:7c:49:3e', '192.168.2.4', ' 950']
+['demo2-vnf_vMT_in_port-zpoqkesrpyno', 'fa:16:3e:ca:fc:d5', '192.168.1.4', ' 946']
+['demo1-vnf_vSF_in_port-dspga2pc2ek5', 'fa:16:3e:fb:c9:b5', '192.168.1.6', ' 937']
+['demo1-vnf_vSF_out_port-hct6y7xsnrpf', 'fa:16:3e:99:75:18', '192.168.2.2', ' 938']
+['demo1-vnf_vMT_out_port-ewlax3zmgogo', 'fa:16:3e:ea:d5:3a', '192.168.2.3', ' 935']
+['demo2-vnf_vSF_in_port-cakzqjynl3ba', 'fa:16:3e:ee:3e:4f', '192.168.1.2', ' 949']

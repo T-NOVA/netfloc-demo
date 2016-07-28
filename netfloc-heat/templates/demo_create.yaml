@@ -36,7 +36,7 @@ parameters:
     type: string
     label: Public network
     description: ID of public network
-    default: e4d260ce-7555-47e1-8eb0-23369ce88de9
+    default: 29473f21-38eb-4dc0-b29b-653ea6f6e670
 
   flavor:
     type: string
@@ -362,7 +362,7 @@ resources:
         get_resource: private_subnet
 
   chain1_create:
-    type: Netfloc::Chain::Create
+    type: Netfloc::Service::Chain
     depends_on: [ vnf_vTC, vnf_vTC_f, vnf_vSF, vnf_vTC_out1_port, vnf_vTC_f_in_port, vnf_vTC_f_out_port, vnf_vSF_in_port ]
     properties:
       port1:
@@ -378,7 +378,7 @@ resources:
       netfloc_ip_port: { get_param: netfloc_ip_port }
 
   chain2_create:
-    type: Netfloc::Chain::Create
+    type: Netfloc::Service::Chain
     depends_on: [ vnf_vTC, vnf_vMT, vnf_vSF, vnf_vTC_out2_port, vnf_vMT_in_port, vnf_vMT_out_port, vnf_vSF_in_port ]
     properties:
       port1:
@@ -423,10 +423,10 @@ outputs:
     value:
       get_resource: vnf_vSF_in_port
   chain1_id:
-    description: Id of the created chain
+    description: Normal traffic (vTC-vTC-f) chain ID
     value:
       get_resource: chain1_create
   chain2_id:
-    description: Id of the created chain
+    description: Video traffic (vTC-vMT) chain ID
     value:
       get_resource: chain2_create

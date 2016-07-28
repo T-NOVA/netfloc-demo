@@ -1,0 +1,73 @@
+"OFPST_PORT_DESC reply (xid=0x2):
+ 1(em2): addr:d4:ae:52:c9:f3:55
+     config:     0
+     state:      0
+     current:    100MB-FD COPPER AUTO_NEG
+     advertised: 10MB-HD 10MB-FD 100MB-HD 100MB-FD 1GB-FD AUTO_NEG
+     supported:  10MB-HD 10MB-FD 100MB-HD 100MB-FD 1GB-FD COPPER AUTO_NEG
+     speed: 100 Mbps now, 1000 Mbps max
+ 933(tap3081ee36-c3): addr:fe:16:3e:f0:04:d4
+     config:     0
+     state:      0
+     current:    10MB-FD COPPER
+     speed: 10 Mbps now, 0 Mbps max
+ 934(tap18dd0320-e0): addr:fe:16:3e:6f:d7:c9
+     config:     0
+     state:      0
+     current:    10MB-FD COPPER
+     speed: 10 Mbps now, 0 Mbps max
+ 935(tap8154b4ba-71): addr:fe:16:3e:ea:d5:3a
+     config:     0
+     state:      0
+     current:    10MB-FD COPPER
+     speed: 10 Mbps now, 0 Mbps max
+ 936(tap95cf1233-14): addr:fe:16:3e:42:c1:fe
+     config:     0
+     state:      0
+     current:    10MB-FD COPPER
+     speed: 10 Mbps now, 0 Mbps max
+ 937(tap39e0fbac-f9): addr:fe:16:3e:fb:c9:b5
+     config:     0
+     state:      0
+     current:    10MB-FD COPPER
+     speed: 10 Mbps now, 0 Mbps max
+ 938(tap6d1f2829-01): addr:fe:16:3e:99:75:18
+     config:     0
+     state:      0
+     current:    10MB-FD COPPER
+     speed: 10 Mbps now, 0 Mbps max
+ 945(tap0fc32d71-a4): addr:fe:16:3e:79:43:f5
+     config:     0
+     state:      0
+     current:    10MB-FD COPPER
+     speed: 10 Mbps now, 0 Mbps max
+ 946(tap346e6e12-91): addr:fe:16:3e:ca:fc:d5
+     config:     0
+     state:      0
+     current:    10MB-FD COPPER
+     speed: 10 Mbps now, 0 Mbps max
+ 947(tap26c25577-44): addr:fe:16:3e:a8:e9:f9
+     config:     0
+     state:      0
+     current:    10MB-FD COPPER
+     speed: 10 Mbps now, 0 Mbps max
+ 948(tap732ab44a-f4): addr:fe:16:3e:28:04:cb
+     config:     0
+     state:      0
+     current:    10MB-FD COPPER
+     speed: 10 Mbps now, 0 Mbps max
+ 949(tapd8a2a8fb-b2): addr:fe:16:3e:ee:3e:4f
+     config:     0
+     state:      0
+     current:    10MB-FD COPPER
+     speed: 10 Mbps now, 0 Mbps max
+ 950(tap2f57b71b-ea): addr:fe:16:3e:7c:49:3e
+     config:     0
+     state:      0
+     current:    10MB-FD COPPER
+     speed: 10 Mbps now, 0 Mbps max
+ LOCAL(br-int): addr:d4:ae:52:c9:f3:55
+     config:     0
+     state:      0
+     speed: 0 Mbps now, 0 Mbps max
+"

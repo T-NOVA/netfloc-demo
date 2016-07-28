@@ -7,11 +7,11 @@ This is setup prepared for the SFC PoP2 on the Demokritos testbed. Netfloc has t
 
 ## Configure OpenStack HEAT for Netfloc
 
-This is an OpenStack HEAT plugin for the [SDK for SDN - Netfloc](http://icclab.github.io/netfloc/ "Netfloc's github page") in order to use the resources of its service funciton chaining (SFC) library. It contains ```netfloc.py``` to be copied in the heat plugins library and two yaml templates: ```create_sfc.yaml``` to create all the required OpenStack resources and a bascic SFC. ```delete_sfc.yaml``` is to delete a chain given its ID number.
+This is an OpenStack HEAT plugin for the [SDK for SDN - Netfloc](http://icclab.github.io/netfloc/ "Netfloc's github page") in order to use the resources of its service funciton chaining (SFC) library. It contains ```netfloc.py``` to be copied in the heat plugins library and a yaml template: ```demo_create.yaml``` to create all the required OpenStack resources for SFC (VNF VMs, networks, and ports) and two service chains.
 
 ## Prepare the plugin
 
-* Create a heat plugin directory under /usr/lib and copy inside the file netfloc.py (or place it alternatively under existing user-defined library):
+* Create a heat plugin directory under /usr/lib and copy inside the file ***netfloc.py*** (or place it alternatively under existing user-defined library):
 
 ```
 mkdir /usr/lib/heat
@@ -47,35 +47,38 @@ service heat-engine restart
 * Run ```heat resource-type-list``` and verify that the following two Netfloc resources show up:
 
 ```
-Netfloc::Chain::Create                   |
-Netfloc::Chain::Delete
+Netfloc::Service::Chain
 ```
 
 ## Test the service chain
 
-* Before creating a chain, Netfloc must be running in a clean OpenStack environment and a public network has to be manualy created with assigning its ID as a parameter in the ```netfloc-demo/templates/demo_create.yaml``` file. 
+* Before creating a chain, Netfloc must be running in a clean OpenStack environment and a public network has to be manualy created, assigning its ID as a parameter in the ```netfloc-demo/templates/demo_create.yaml``` file. 
 
 * Once the setup is done and the chain is created using:
 ```heat-create -f demo_create.yaml [name_of_stack]``` 
-the chain ID is listed in the Outputs section of the Stack Overview. Verify that the traffic steering is correct (ex. tcpdump) inside the VNF and on the endpoints. 
+the chain ID is listed in the Outputs section of the Stack Overview. You can verify that the traffic steering is correct (ex. using tcpdump) inside the VNF and on the endpoints. 
 
 * To delete the chain run: 
-```heat-delete -f demo_delete.yaml [name_of_stack]```
-specifying in the template the ID of the chian to be deleted.
+```heat-delete [name_of_stack]```
 
 * This is the output from the heat-engine log file:
 
 ```
 tail -f /var/log/heat/heat-engine.log | grep --line-buffered netfloc:
-18589 DEBUG urllib3.connectionpool [-] "POST /restconf/operations/netfloc:create-service-chain HTTP/1.1" 200 None _make_request /usr/lib/python2.7/dist-packages/urllib3/connectionpool.py:430
-18589 DEBUG urllib3.connectionpool [-] "POST /restconf/operations/netfloc:delete-service-chain HTTP/1.1" 200 0 _make_request /usr/lib/python2.7/dist-packages/urllib3/connectionpool.py:430
+
+DEBUG urllib3.connectionpool [-] "POST /restconf/operations/netfloc:create-service-chain HTTP/1.1" 200 None _make_request /usr/lib/python2.7/dist-packages/urllib3/connectionpool.py:430
+
+DEBUG urllib3.connectionpool [-] "POST /restconf/operations/netfloc:delete-service-chain HTTP/1.1" 200 0 _make_request /usr/lib/python2.7/dist-packages/urllib3/connectionpool.py:430
 ```
 * This is the output from the Netfloc log file:
 
 ```
-root@odl:~/netfloc_current# tail -f karaf/target/assembly/data/log/karaf.log | grep --line-buffered chainID
-2016-05-26 10:29:44,826 | INFO  | tp1443878269-438 | ServiceChain                     | 269 - ch.icclab.netfloc.impl - 1.0.0.SNAPSHOT | ServiceChain chainID: 1
-2016-05-26 10:29:44,826 | INFO  | tp1443878269-438 | NetflocServiceImpl               | 269 - ch.icclab.netfloc.impl - 1.0.0.SNAPSHOT | chainID: 1
+tail -f karaf/target/assembly/data/log/karaf.log | grep --line-buffered chainID
+
+2016-07-27 16:28:13,415 | INFO  | p784668118-46752 | ServiceChain                     | 269 - ch.icclab.netfloc.impl - 1.0.0.SNAPSHOT | ServiceChain chainID: 1
+2016-07-27 16:28:13,416 | INFO  | p784668118-46752 | NetflocServiceImpl               | 269 - ch.icclab.netfloc.impl - 1.0.0.SNAPSHOT | chainID: 1
+2016-07-27 16:28:44,048 | INFO  | p784668118-46752 | ServiceChain                     | 269 - ch.icclab.netfloc.impl - 1.0.0.SNAPSHOT | ServiceChain chainID: 2
+2016-07-27 16:28:44,049 | INFO  | p784668118-46752 | NetflocServiceImpl               | 269 - ch.icclab.netfloc.impl - 1.0.0.SNAPSHOT | chainID: 2
 ```
 
 A simple demo example of service chain setup is shown in the following ICCLab [blog post](https://blog.zhaw.ch/icclab/service-function-chaining-using-the-sdk4sdn/).
@@ -83,9 +86,7 @@ Following the basic template, the complexity of the chain can be modified by def
 
 ## Server app for port mapping and flows setup
 
-* Location: ```netfloc-demo/src/server.py```
-* For the app to work, a passwordless login is required for: Node2 and Switch from the Control node. Plus ***NOPASSWD*** is required for the ***ovs-ofctl*** and the VNF scrips in Node2 and the Switch. The VNFs also reqire passwordless access and root priviledges for the scripts, but this is all preconfigured in the VNFs snapsohts.
-* The way to do it:
+* For the app to work, a passwordless login is required for: Node2 and Switch from the Control node. Plus ***NOPASSWD*** is required for the ***ovs-ofctl*** and the VNF scrips in Node2 and the Switch. The VNFs also reqire passwordless access and root priviledges for the scripts, which for this demo is already preconfigured in the VNFs snapsohts. The way to do it:
 
 ```
 Switch
@@ -126,7 +127,7 @@ ubuntu ubuntu-amd64 = (root) NOPASSWD: ALL
 ## Scripts in the OS nodes and the VMs
 Already prepared in the nodes.
 
-* In Switch - ***sfc-vlan-flows***
+* In Switch - ***sfc-vlan-flows***. These flows are required for WICM redirection of bi-directional traffic between User1 and User2.
 
 ```
 root@nfvipop2-switch:/home/localadmin# cat sfc-vlan-flows
@@ -135,7 +136,7 @@ ovs-ofctl add-flow br0 priority=14,in_port=2,dl_vlan=401,actions=output:3
 ovs-ofctl add-flow br0 priority=14,in_port=3,dl_vlan=401,actions=output:1
 ovs-ofctl add-flow br0 priority=14,in_port=2,dl_vlan=400,actions=output:3
 ```
-* In vSF - ***sfc-flows-sf***
+* In vSF - ***sfc-flows-sf***. This VM serves as hub for the VLAN traffic, i.e. it adds the VLAN flows required by the WICM before the traffic leaves the SFC PoP.
 
 ```
 ovs-ofctl del-flows vnf
@@ -147,7 +148,7 @@ ovs-ofctl dump-flows vnf
 ifconfig eth1 up
 ifconfig eth2 up
 ```
-* In vTC - ***run-vTC.sh***
+* In vTC - ***run-vTC.sh***. This script runs the vTC in DPI mode.
 
 ```
 #!/bin/sh
@@ -165,7 +166,7 @@ exit
 * Verify with ```ps aux | grep ndpi``` that the vTC is running.
 
 
-* In vTC-f ***run-vTC-f.sh***
+* In vTC-f ***run-vTC-f.sh***. This script runs the vTC in forwarding mode.
 
 ```
 if [ ! -f vtc/PF_RING/kernel/pf_ring.ko ]; then
@@ -180,7 +181,7 @@ exit
 ```
 * Verify with ```ps aux | grep pfring``` that the vTC is running.
 
-* In vMT ***run-vMT.sh***
+* In vMT ***run-vMT.sh***. This script runs the transcoding service specifying a watermark to be added on the incoming traffic.
 
 ```
 ifconfig eth1 promisc up
@@ -188,7 +189,7 @@ ifconfig eth2 promisc up
 ffmpeg -re -i udp:13.13.13.5:33334 -i watermark_sesame_logo.png -filter_complex "overlay=7*((main_w-overlay_w)/8):(main_h-overlay_h)/2" -vcodec mpeg4 -an -b:v 2048 -f mpegts udp:10.50.0.2:33334
 ```
 
-* Run the server.py app from ```netfloc-demo/src``` on Control node. Expected output:
+* After the heat stack creation finish, run the server.py app from on Control node. You will be asked to manually enter the IP addresses of the VNF VMs. Expected output:
 
 ```
 Node2 SFC flows installed successfully :)
@@ -225,7 +226,7 @@ Please enter user@IP of the vTC-f VNF: ubuntu@10.100.0.103
 vTC-f started successfully ツ
 ```
 
-* With this the demo is (almost) ready to run. At the moment the vMT flows are added manually (PRELIMINARY). 
+* With this the demo is (almost) ready to run. At the moment the vMT flows are added manually (PRELIMINARY). This isdue to the nature of the vMT who is a L3 VNF and makes aditional modification (on the top of the chainining rules) on the packet's header. 
 
 ### Rules to make the vMT work
 
@@ -234,38 +235,40 @@ vTC-f started successfully ツ
 ```
 ffmpeg -re -i big_buck_bunny_720p_surround.avi -vcodec mpeg4 -an -b 1024k -s 640x480 -f mpegts udp:10.50.0.2:33334
 ```
-* The following is needed to override the netfloc chain rules with new rules (as vMT requires). Two flows has to be added manually. 
+* The following flows are needed to override the netfloc chain rules with new rules (as vMT requires). Two flows has to be added manually on the ***br-int*** bridge of the OpenStack node where the vMT is running. 
 
 #### vMT Flow (1) 
 
-* Send the video stream from user1 after all chains are established. Go in vMT and do: ```tcpdump –i eth1 –nvve```* Get the source mac of the udp packets, remember it (for example ```04:31:ff:ff:ff:ff```) and modify it to ```04:31:00:00:00:00```
-* Find in the Controller the ```vMT_in_port``` number inside ```/port_mappings/control_port_mappings```. The port we need is the one that corresponds to```vMT_eth0_port``` and it is usually one less numebr than the ```vMT_in_port```.
-* Run ```ovs-ofctl dump-flows br-int | grep "priority=20,in_port=1"``` to find the following rule: ```priority=20,in_port=1,dl_dst=02:00:00:00:00:00/ff:ff:00:00:00:00 actions=output:<vMT_eth1_port>```
+* Send the video stream from User1, and run from inside the vMT: ```tcpdump –i eth1 –nvve```* Get the source mac of the udp packets, remember it (for example ```02:12:ff:ff:ff:ff```) and modify it to ```02:12:00:00:00:00```
+* Find in the Controller the ```vMT_in_port``` number inside ```/port_mappings/control_port_mappings```. The port we need is the one that corresponds to```vMT_eth0_port``` and it is usually one number lower than the ```vMT_in_port```, which corresponds to the eth1 interface of that VM.
+* Run ```ovs-ofctl dump-flows br-int | grep "priority=20,in_port=1"``` to find the following rule: ```priority=20,in_port=1,dl_dst=02:00:00:00:00:00/ff:ff:00:00:00:00 actions=output:<vMT_in_port>```
 * According to this, create the following rule: ```ovs-ofctl add-flow br-int priority=21,in_port=1,dl_dst=02:00:00:00:00:00/ff:ff:00:00:00:00,actions=strip_vlan,mod_dl_dst:<vMT eth0 mac>,mod_nw_dst:<vMT eth0 IP>,mod_nw_tos:4,output:<vMT eth0 port>```
 * The final rule looks like this:
-```ovs-ofctl add-flow br-int priority=21,in_port=1,dl_dst=02:00:00:00:00:00/ff:ff:00:00:00:00,actions=strip_vlan,mod_dl_dst:fa:16:3e:21:41:e0,mod_nw_dst:13.13.13.4,mod_nw_tos:4,output:784```
+```ovs-ofctl add-flow br-int priority=21,in_port=1,dl_dst=02:00:00:00:00:00/ff:ff:00:00:00:00,actions=strip_vlan,mod_dl_dst:fa:16:3e:21:41:e0,mod_nw_dst:13.13.13.4,mod_nw_tos:4,output:933```
 
 #### vMT Flow (2) 
 
-* Search the mac address you remembered in the previous command (02:12:00:00:00:00) on the Control node (running the vMT):
+* Search the mac address you remembered in the previous command (02:12:00:00:00:00) on the Control node (running the vMT VNF):
+
 ```ovs-ofctl dump-flows br-int | grep 02:12:00:00:00:00```. Normally only one flow should appear as output, for example:
 ```
-priority=20,in_port=319,dl_src=04:31:00:00:00:00/ff:ff:00:00:00:00,dl_dst=04:00:00:00:00:0,actions=mod_dl_src:00:90:27:22:d2:68,mod_dl_dst:b8:ae:ed:77:73:bc,output:773
+priority=20,in_port=935,dl_src=02:12:00:00:00:00/ff:ff:00:00:00:00,dl_dst=02:00:00:00:00:0,actions=mod_dl_src:00:90:27:22:d2:68,mod_dl_dst:b8:ae:ed:77:73:bc,output:937
 ```
+Port 937 corresponds to ***vSF\_in\_port***.
 
 * You need to take the actions from that flow. Add 2 more actions and mach it accordingly to create the following flow rule: 
 
-```ovs-ofctl add-flow br-int priority=21,in_port=<vMT eth0 port>,dl_type=0x0800,nw_proto=17,nw_src=<vMT eth0 IP>,nw_dst=10.50.0.2,dl_src=<vMT eth0 mac>,dl_dst=<GET PACKET DST MAC FROM TCPDUMP ETH0 IN vMT>,actions=mod_vlan_vid:401,mod_nw_src=10.50.0.1,mod_dl_src:00:90:27:22:d2:68,mod_dl_dst:b8:ae:ed:77:73:bc,output:773```
+```ovs-ofctl add-flow br-int priority=21,in_port=<vMT eth0 port>,dl_type=0x0800,nw_proto=17,nw_src=<vMT eth0 IP>,nw_dst=10.50.0.2,dl_src=<vMT eth0 mac>,dl_dst=<GET PACKET DST MAC FROM TCPDUMP ETH0 IN vMT>,actions=mod_vlan_vid:401,mod_nw_src=10.50.0.1,mod_dl_src:00:90:27:22:d2:68,mod_dl_dst:b8:ae:ed:77:73:bc,output:937```
 * The final rule looks like this: 
 
-```ovs-ofctl add-flow br-int priority=21,in_port=769,dl_type=0x0800,nw_proto=17,nw_src=13.13.13.5,nw_dst=10.50.0.2,dl_src=fa:16:3e:58:9a:84,dl_dst=fa:16:3e:21:f8:8d,actions=mod_vlan_vid:401,mod_nw_src=10.50.0.1,mod_dl_src:00:90:27:22:d2:68,mod_dl_dst:b8:ae:ed:77:73:bc,output:773```
+```ovs-ofctl add-flow br-int priority=21,in_port=769,dl_type=0x0800,nw_proto=17,nw_src=13.13.13.5,nw_dst=10.50.0.2,dl_src=fa:16:3e:58:9a:84,dl_dst=fa:16:3e:21:f8:8d,actions=mod_vlan_vid:401,mod_nw_src=10.50.0.1,mod_dl_src:00:90:27:22:d2:68,mod_dl_dst:b8:ae:ed:77:73:bc,output:937```
 * After the flows are installed, run the following command in the vMT to start the transcoding:
 
 ```
 ffmpeg -re -i udp:13.13.13.5:33334 -i watermark_xil.png -filter_complex "overlay=7*((main_w-overlay_w)/8):(main_h-overlay_h)/2" -vcodec mpeg4 -an -b:v 2048 -f mpegts udp:10.50.0.2:33334
 ```
 
-This command takes the video from the portIP 13.13.13.5 of eth0, adds a watermark and sends the video to destination IP: 10.50.0.2:33334. To change the watermark, replace the file watermark_xil.png. With T-Nova or Sesame logos:
+This command takes the video from the vMT eth0 interface with source IP 13.13.13.5, adds a watermark and sends it to destination IP: 10.50.0.2:33334 that are received on User2's interface eth0.100. To change the watermark, replace the file watermark_xil.png. 
 
 ```
 ffmpeg -re -i udp:13.13.13.5:33334 -i watermark_tnova_logo.jpg -filter_complex "overlay=7*((main_w-overlay_w)/8):(main_h-overlay_h)/2" -vcodec mpeg4 -an -b:v 2048 -f mpegts udp:10.50.0.2:33334
@@ -279,9 +282,9 @@ ffplay udp://10.50.0.2:33334```
 
 ## Video with and w/o watermark
 
-* WICM component is used to make redirection of the flows to the SFC PoP. When redirection is enabled the video is with watermark.
+* WICM component is used to make redirection of the flows to the SFC PoP. When redirection is enabled the video is shown with watermark.
 
-* WICM redirection: REST calls are needed here. They can be done with CURL. To view the redirections do:
+* WICM redirection: REST calls are needed here. They are currently done using cURL. To view the existing redirections run:
 ```curl http://10.30.0.12:12891/vnf-connectivity```* To enable the redirection search the last ```$ns_instance_id``` and replace it with new (```$ns_instance_id``` must be unique for each redirection). Then run the following to allocate vnlan_ids for the redirection:```
 localadmin@control:~$ curl -X  POST -H "Content-Type: application/json" -H "Cache-Control: no-cache" -d '{"service":{"ns_instance_id":"1","client_mkt_id":"1","nap_mkt_id":"1","nfvi_mkt_id":"1"}}' http://10.30.0.12:12891/vnf-connectivity
 {
@@ -304,4 +307,4 @@ localadmin@control:~$ curl -X PUT http://10.30.0.12:12891/vnf-connectivity/1
   }
 ```* To disable the redirection and with this, the chain & video transcoding, run:
 
-```curl -X DELETE http://10.30.0.12/vnf-connectivity/$ns_instance_id```
+```curl -X DELETE http://10.30.0.12:12891/vnf-connectivity/$ns_instance_id```

@@ -136,34 +136,30 @@ class Server():
 		                       stderr=subprocess.PIPE)
 		result = ssh_Node2.stdout.read()
 		ports = json.dumps(result, indent=4, sort_keys=True).replace('\\n', '\n')
-		#print ports
 		if result == []:
 		    error = ssh_Node2.stderr.readlines()
 		    print >>sys.stderr, "ERROR: %s" % error
 		else:
-		    node2_ports = open('../port_mappings/node2_ovs_ports', 'w')
-		    node2_ports.write(ports)
+		    node2_ports = open('port_mappings/node2_ovs_ports', 'w')
+		    node2_ports.write(ports+"\n")
 		    #print result
+		node2_port_mapping = open('port_mappings/node2_port_mappings', 'w')
 		# Check if the mac address (only 6 digits) appeares in the OVS ports ouptut
 		for port_data in portsList:
 			# Mac address in the filtered Neutron port list
 			mac_address = port_data[1][3:]
-			#print port_data
-			# Output from the ovs-ofctl command with OVS ports description
-			if mac_address in ports:
-				port_index = ports.index(mac_address)
-				#TODO: make this parsing more elegant
-				port_number = "%s%s%s" % (ports[int(port_index)-29],ports[int(port_index)-28],ports[int(port_index)-27])
-				port_data.append(port_number)
-				portMappingList.append(port_data)
-				# Record of the required mappings
-		node2_port_mapping = open('../port_mappings/node2_port_mappings', 'w')
-		node2_port_mapping.write(str(portMappingList))
-		#print portMappingList
+			node2_ports = open('port_mappings/node2_ovs_ports', 'r')
+			lines = node2_ports.readlines()
+			for line in lines:
+				if mac_address in line:
+					port_number = line.partition(mac_address)[0].partition("(tap")[0]
+					port_data.append(port_number)
+					portMappingList.append(port_data)
+		node2_port_mapping.writelines(["%s\n" % item  for item in portMappingList])
+
 		for port_dict in portsList:
 			if (port_dict[0].find('vTC_in_port') != -1):
 				vTC_in_port = port_dict[3]
-				#print vTC_in_port
 				try:
 					if vTC_in_port != '':
 						self._putFlowsNode2(vTC_in_port)
@@ -222,29 +218,24 @@ class Server():
 			error = process.stderr.readlines()
 			print >>sys.stderr, "ERROR: %s" % error
 		else:
-			control_ports = open('../port_mappings/control_ovs_ports', 'w')
-			control_ports.write(ports)
-			#print result
+			control_ports = open('port_mappings/control_ovs_ports', 'w')
+			control_ports.write(ports+"\n")
 		#Check if the mac address (only 6 digits) appeares in the OVS ports ouptut
+		control_port_mapping = open('port_mappings/control_port_mappings', 'w')
 		for port_data in portsList:
 			# Mac address in the filtered Neutron port list
 			mac_address = port_data[1][3:]
-			#print port_data
-			# Output from the ovs-ofctl command with OVS ports description
-			if mac_address in ports:
-				port_index = ports.index(mac_address)
-				#TODO: make this parsing more elegant
-				port_number = "%s%s%s" % (ports[int(port_index)-29],ports[int(port_index)-28],ports[int(port_index)-27])
-				port_data.append(port_number)
-				portMappingList.append(port_data)
-				# Record of the required mappings
-		control_port_mapping = open('../port_mappings/control_port_mappings', 'w')
-		control_port_mapping.write(str(portMappingList))
-		#print portMappingList
+			lines = control_ports.readlines()
+			for line in lines:
+				if mac_address in line:
+					port_number = line.partition(mac_address)[0].partition("(tap")[0]
+					port_data.append(port_number)
+					portMappingList.append(port_data)
+		control_port_mapping.writelines(["%s\n" % item  for item in portMappingList])
+
 		for port_dict in portsList:
 			if (port_dict[0].find('vSF_out_port') != -1):
 				vSF_out_port = port_dict[3]
-				#print vSF_out_port
 				try:
 					if vSF_out_port != '':
 						self._putFlowsControl(vSF_out_port)
