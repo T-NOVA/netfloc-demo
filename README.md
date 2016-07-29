@@ -55,11 +55,11 @@ Netfloc::Service::Chain
 * Before creating a chain, Netfloc must be running in a clean OpenStack environment and a public network has to be manualy created, assigning its ID as a parameter in the ```netfloc-demo/templates/demo_create.yaml``` file. 
 
 * Once the setup is done and the chain is created using:
-```heat-create -f demo_create.yaml [name_of_stack]``` 
+```heat stack-create -f demo_create.yaml [name_of_stack]``` 
 the chain ID is listed in the Outputs section of the Stack Overview. You can verify that the traffic steering is correct (ex. using tcpdump) inside the VNF and on the endpoints. 
 
 * To delete the chain run: 
-```heat-delete [name_of_stack]```
+```heat stack-delete [name_of_stack]```
 
 * This is the output from the heat-engine log file:
 

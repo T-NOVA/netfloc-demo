@@ -20,52 +20,32 @@
 
 __author__ = 'traj'
 
-#from oslo_log import log as logging
 from heat.engine import properties
 from heat.engine import resource
 from gettext import gettext as _
 import requests
 import json
-import time
+import time            
 from time import sleep
+from heat.openstack.common import log as logging
 
-#LOG = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
+
 class ServiceChain(resource.Resource):
     PROPERTIES = (
-        PORT1,
-        PORT2,
-        PORT3,
-        PORT4,
+        NEUTRON_PORTS,
         ODL_USERNAME,
         ODL_PASSWORD,
         NETFLOC_IP_PORT) = (
-        'port1',
-        'port2',
-        'port3',
-        'port4',
+        'neutron_ports',
         'odl_username',
         'odl_password',
         'netfloc_ip_port')
 
     properties_schema = {
-        PORT1: properties.Schema(
-            data_type=properties.Schema.STRING,
-            description=_('SFC port of VNF'),
-            required=True
-        ),
-        PORT2: properties.Schema(
-            data_type=properties.Schema.STRING,
-            description=_('SFC port of VNF'),
-            required=True
-        ),
-        PORT3: properties.Schema(
-            data_type=properties.Schema.STRING,
-            description=_('SFC port of VNF'),
-            required=True
-        ),
-        PORT4: properties.Schema(
-            data_type=properties.Schema.STRING,
-            description=_('SFC port of VNF'),
+        NEUTRON_PORTS: properties.Schema(
+            data_type=properties.Schema.LIST,
+            description=_('IP and port of the Netfloc node'),
             required=True
         ),
         ODL_USERNAME: properties.Schema(
@@ -92,27 +72,23 @@ class ServiceChain(resource.Resource):
         odl_username = self.properties.get(self.ODL_USERNAME)
         odl_password = self.properties.get(self.ODL_PASSWORD)
         netfloc_ip_port = self.properties.get(self.NETFLOC_IP_PORT)
-        port1 = self.properties.get(self.PORT1)
-        port2 = self.properties.get(self.PORT2)
-        port3 = self.properties.get(self.PORT3)
-        port4 = self.properties.get(self.PORT4)
+        neutron_ports = self.properties.get(self.NEUTRON_PORTS)
+        ports = ','.join(neutron_ports)
 
-        ports = "%s,%s,%s,%s" % (port1, port2, port3, port4)
         create_url = 'restconf/operations/netfloc:create-service-chain'
         url = "%s%s:%s@%s/%s" % ('http://',odl_username,odl_password,netfloc_ip_port,create_url)
-        ports_dict = {"input": {"neutron-ports": str(ports)}}
+        ports_dict = {"input": {"neutron-ports": ports}}
         headers = {'Content-type': 'application/json'}
-        #LOG.debug('CHAIN_PORTS %s', ports_dict)
+        LOG.debug('CHAIN_PORTS %s', ports_dict)
         try:
             req = requests.post(url, data=json.dumps(ports_dict), headers=headers)
             if req.json()['output']:
                 chainID = req.json()['output']['service-chain-id']
                 self.resource_id_set(chainID)
-                #LOG.debug('chainID %s', chainID)
+                LOG.debug('chainID %s', chainID)
                 return chainID
         except Exception as ex:
-            pass
-            #LOG.warn("Failed to fetch chain ID: %s", ex)
+            LOG.warn("Failed to fetch chain ID: %s", ex)
 
     def handle_delete(self):
 
@@ -131,8 +107,7 @@ class ServiceChain(resource.Resource):
         try:
             req = requests.post(url, data=json.dumps(body), headers=headers)
         except Exception as ex:
-            pass
-             #LOG.warn("Failed to delete chain: %s", ex)
+             LOG.warn("Failed to delete chain: %s", ex)
 
 def resource_mapping():
     mappings = {}

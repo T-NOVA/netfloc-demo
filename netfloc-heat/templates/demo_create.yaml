@@ -36,7 +36,7 @@ parameters:
     type: string
     label: Public network
     description: ID of public network
-    default: 29473f21-38eb-4dc0-b29b-653ea6f6e670
+    default: 0d7a1752-145c-476f-ad44-c4e3d85cb6af
 
   flavor:
     type: string
@@ -365,14 +365,7 @@ resources:
     type: Netfloc::Service::Chain
     depends_on: [ vnf_vTC, vnf_vTC_f, vnf_vSF, vnf_vTC_out1_port, vnf_vTC_f_in_port, vnf_vTC_f_out_port, vnf_vSF_in_port ]
     properties:
-      port1:
-        get_resource: vnf_vTC_out1_port
-      port2:
-        get_resource: vnf_vTC_f_in_port
-      port3:
-        get_resource: vnf_vTC_f_out_port
-      port4:
-        get_resource: vnf_vSF_in_port
+      neutron_ports: [ get_resource: vnf_vTC_out1_port, get_resource: vnf_vTC_f_in_port, get_resource: vnf_vTC_f_out_port, get_resource: vnf_vSF_in_port ]
       odl_username : { get_param: odl_username }
       odl_password: { get_param: odl_password }
       netfloc_ip_port: { get_param: netfloc_ip_port }
@@ -381,14 +374,7 @@ resources:
     type: Netfloc::Service::Chain
     depends_on: [ vnf_vTC, vnf_vMT, vnf_vSF, vnf_vTC_out2_port, vnf_vMT_in_port, vnf_vMT_out_port, vnf_vSF_in_port ]
     properties:
-      port1:
-        get_resource: vnf_vTC_out2_port
-      port2:
-        get_resource: vnf_vMT_in_port
-      port3:
-        get_resource: vnf_vMT_out_port
-      port4:
-        get_resource: vnf_vSF_in_port
+      neutron_ports: [ get_resource: vnf_vTC_out2_port, get_resource: vnf_vMT_in_port, get_resource: vnf_vMT_out_port, get_resource: vnf_vSF_in_port ]
       odl_username : { get_param: odl_username }
       odl_password: { get_param: odl_password }
       netfloc_ip_port: { get_param: netfloc_ip_port }
