@@ -26,6 +26,25 @@ parameters:
     description: Image to use for the vSF VNF
     default: vSF-7.6.2016
 
+  image_vSA:
+    type: string
+    label: Image for the PXaaS (virtual security appliance) VNF
+    description: Image to use for the vSA VNF
+    default: vSA firewall 5.4
+	
+  image_PXaaS:
+    type: string
+    label: Image for the PXaaS (virtual proxy server) VNF
+    description: Image to use for the PXaaS VNF
+    default: PXaaS
+	
+  image_vAT:
+    type: string
+    label: Image for the demo client attacker
+    description: Ubuntu Image to use show case 
+    default: vATTacker
+
+	
   sshkey:
     type: string
     label: VMs ssh key
@@ -216,6 +235,24 @@ resources:
       port_id:
         get_resource: vnf_vSF_floating_ip_port
 
+  vnf_vSA_in_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id:
+        get_resource: vnf_in_network
+      fixed_ips:
+        - subnet_id:
+            get_resource: vnf_in_subnet
+			
+  vnf_vSA_out2_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id:
+        get_resource: vnf_ou2_network
+      fixed_ips:
+        - subnet_id:
+            get_resource: vnf_out2_subnet
+			
   vnf_vTC_f:
     type: OS::Nova::Server
     properties:
@@ -289,6 +326,47 @@ resources:
         - port:
             get_resource: vnf_vSF_out_port
 
+  vnf_vSA:
+    type: OS::Nova::Server
+    properties:
+      name: vSA
+      image:
+        get_param: image_vSA
+      flavor:
+        get_param: flavor
+      availability_zone: nova:control
+      networks:       
+        - port:
+            get_resource: vnf_vSA_in_port
+        - port:
+            get_resource: vnf_vSA_out_port
+
+  vnf_PXaaS:
+    type: OS::Nova::Server
+    properties:
+      name: vSA
+      image:
+        get_param: image_PXaaS
+      flavor:
+        get_param: flavor
+      availability_zone: nova:control
+      networks:       
+        - port:
+            get_resource: vnf_vSA_out_port
+
+  vnf_Attacker:
+    type: OS::Nova::Server
+    properties:
+      name: vSA
+      image:
+        get_param: image_vAT
+      flavor:
+        get_param: flavor
+      availability_zone: nova:control
+      networks:       
+        - port:
+            get_resource: vnf_vSA_in_port
+			
   private_network:
     type: OS::Neutron::Net
     properties:
@@ -378,6 +456,13 @@ resources:
       odl_username : { get_param: odl_username }
       odl_password: { get_param: odl_password }
       netfloc_ip_port: { get_param: netfloc_ip_port }
+
+ chain3_create:
+    type: Netfloc::Service::Chain
+    depends_on: [ vnf_vSA, vnf_PXaaS, vnf_Attacker, vnf_vSA_out2_port, vnf_vSA_in_port ]
+    properties:
+      neutron_ports: [ get_resource: vnf_vSA_out2_port, get_resource: vnf_vSA_in_port ]      
+  
 
 outputs:
   vnf_vTC_out1_port:
