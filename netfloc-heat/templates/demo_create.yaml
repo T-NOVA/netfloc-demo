@@ -226,7 +226,17 @@ resources:
       fixed_ips:
         - subnet_id:
             get_resource: private_subnet
+			
+ vnf_PXaaS_floating_ip_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id:
+        get_resource: private_network
+      fixed_ips:
+        - subnet_id:
+            get_resource: private_subnet
 
+			
   vnf_vSF_floating_ip:
     type: OS::Neutron::FloatingIP
     properties:
@@ -234,6 +244,14 @@ resources:
         get_param: public_network
       port_id:
         get_resource: vnf_vSF_floating_ip_port
+
+ vnf_PXaaS_floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network_id:
+        get_param: public_network
+      port_id:
+        get_resource: vnf_PXaaS_floating_ip_port
 
   vnf_vSA_in_port:
     type: OS::Neutron::Port
@@ -350,7 +368,9 @@ resources:
       flavor:
         get_param: flavor
       availability_zone: nova:control
-      networks:       
+      networks:
+       - port:
+            get_resource: vnf_PXaas_floating_ip_port	  
         - port:
             get_resource: vnf_vSA_out_port
 
