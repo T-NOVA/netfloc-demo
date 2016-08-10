@@ -307,7 +307,6 @@ resources:
         - port:
             get_resource: vnf_vTC_out2_port
 
-
   vnf_vMT:
     type: OS::Nova::Server
     properties:
