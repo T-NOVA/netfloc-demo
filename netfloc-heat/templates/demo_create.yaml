@@ -373,6 +373,7 @@ resources:
         - port:
             get_resource: vnf_vSA_out_port
 
+			
   vnf_Attacker:
     type: OS::Nova::Server
     properties:
