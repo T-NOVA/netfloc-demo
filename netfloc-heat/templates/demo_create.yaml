@@ -130,6 +130,15 @@ resources:
         - subnet_id:
             get_resource: vnf_out2_subnet
 
+  vnf_vSA_out2_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id:
+        get_resource: vnf_out2_network
+      fixed_ips:
+        - subnet_id:
+            get_resource: vnf_out2_subnet
+
   vnf_vMT_in_port:
     type: OS::Neutron::Port
     properties:
@@ -264,7 +273,7 @@ resources:
     type: OS::Neutron::Port
     properties:
       network_id:
-        get_resource: vnf_ou2_network
+        get_resource: vnf_out2_network
       fixed_ips:
         - subnet_id:
             get_resource: vnf_out2_subnet
@@ -354,7 +363,7 @@ resources:
         - port:
             get_resource: vnf_vSA_in_port
         - port:
-            get_resource: vnf_vSA_out_port
+            get_resource: vnf_vSA_out2_port
 
   vnf_vProxy:
     type: OS::Nova::Server
@@ -369,7 +378,7 @@ resources:
         - port:
             get_resource: vnf_vProxy_floating_ip_port
         - port:
-            get_resource: vnf_vSA_out_port
+            get_resource: vnf_vSA_out2_port
 
 
   vnf_Attacker:
@@ -478,6 +487,10 @@ resources:
   chain3_create:
     type: Netfloc::Service::Chain
     depends_on: [ vnf_vSA, vnf_vProxy, vnf_Attacker, vnf_vSA_out2_port, vnf_vSA_in_port ]
+    properties:
+      neutron_ports: [ get_resource: vnf_vSA_out2_port, get_resource: vnf_vSA_in_port ]
+      odl_username : { get_param: odl_username }
+      odl_password: { get_param: odl_password }
     properties:
       neutron_ports: [ get_resource: vnf_vSA_out2_port, get_resource: vnf_vSA_in_port ]      
   
