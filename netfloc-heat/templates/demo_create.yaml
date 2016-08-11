@@ -519,3 +519,7 @@ outputs:
     description: Video traffic (vTC-vMT) chain ID
     value:
       get_resource: chain2_create
+  chain3_id:
+    description: vSA (vSA-vProxy) chain ID
+    value:
+      get_resource: chain3_create
