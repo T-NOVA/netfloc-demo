@@ -416,7 +416,7 @@ resources:
   vnf_vProxy_f_floating_ip:
     type: OS::Neutron::FloatingIP
     properties:
-      floating_network: publuc
+      floating_network: public
       port_id:
           get_resource: vnf_vProxy_floating_ip_port
 
