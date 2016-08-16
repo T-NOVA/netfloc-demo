@@ -41,8 +41,77 @@ parameters:
     default: admin
     description: Password for ODL Restconf access
 
+  netfloc_ip_port:
+    type: string
+    label: Netfloc IP and port number
+    default: "10.30.0.61:8181"
+    description: IP and port of the Netfloc node
 
 resources:
+
+  vnf_in_network:
+    type: OS::Neutron::Net
+    properties:
+      name: vnf_in_network
+
+  vnf_in_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      name: vnf_in_subnet
+      network_id:
+        get_resource: vnf_in_network
+      cidr: 192.168.1.0/24
+      gateway_ip: 192.168.1.1
+
+  vnf_vSA_in_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id:
+        get_resource: vnf_in_network
+      fixed_ips:
+        - subnet_id:
+            get_resource: vnf_in_subnet
+
+  vnf_Attacker_in_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id:
+        get_resource: vnf_in_network
+      fixed_ips:
+        - subnet_id:
+            get_resource: vnf_in_subnet
+
+  vnf_out2_network:
+    type: OS::Neutron::Net
+    properties:
+      name: vnf_out2_network
+
+  vnf_out2_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      name: vnf_out2_subnet
+      network_id:
+        get_resource: vnf_out2_network
+      cidr: 192.168.3.0/24
+      gateway_ip: 192.168.3.1
+
+  vnf_vSA_out2_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id:
+        get_resource: vnf_out2_network
+      fixed_ips:
+        - subnet_id:
+            get_resource: vnf_out2_subnet
+
+  vnf_vProxy_out2_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id:
+        get_resource: vnf_out2_network
+      fixed_ips:
+        - subnet_id:
+            get_resource: vnf_out2_subnet
 
   vnf_vProxy_floating_ip_port:
     type: OS::Neutron::Port
@@ -54,7 +123,7 @@ resources:
   vnf_vProxy_f_floating_ip:
     type: OS::Neutron::FloatingIP
     properties:
-      floating_network: public
+      floating_network: publuc
       port_id:
           get_resource: vnf_vProxy_floating_ip_port
 
@@ -68,8 +137,9 @@ resources:
         get_param: flavor
       availability_zone: nova:control
       networks:       
-        - network: vnf_in_network
-
+        - port:
+            get_resource: vnf_Attacker_in_port
+ 
   vnf_vSA:
     type: OS::Nova::Server
     properties:
@@ -80,9 +150,10 @@ resources:
         get_param: flavor
       availability_zone: nova:control
       networks:       
-        - network: vnf_in_network
-        - network: vnf_out2_network
-
+        - port:
+            get_resource: vnf_vSA_in_port
+        - port:
+            get_resource: vnf_vSA_out2_port
   vnf_vProxy:
     type: OS::Nova::Server
     properties:
@@ -95,4 +166,13 @@ resources:
       networks:
         - port:
             get_resource: vnf_vProxy_floating_ip_port
-        - network: vnf_out2_network
+        - port:
+            get_resource: vnf_vProxy_out2_port
+  chain3_create:
+    type: Netfloc::Service::Chain
+    depends_on: [ vnf_Attacker, vnf_vSA, vnf_vProxy, vnf_vSA_out2_port, vnf_vSA_in_port ,vnf_vProxy_out2_port, vnf_Attacker_in_port ]
+    properties:
+      neutron_ports: [ get_resource: vnf_vSA_out2_port, get_resource: vnf_vSA_in_port ]
+      odl_username : { get_param: odl_username }
+      odl_password: { get_param: odl_password }
+      netfloc_ip_port: { get_param: netfloc_ip_port }
