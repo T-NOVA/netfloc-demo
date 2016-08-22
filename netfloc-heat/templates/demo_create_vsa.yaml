@@ -170,9 +170,9 @@ resources:
             get_resource: vnf_vProxy_out2_port
   chain3_create:
     type: Netfloc::Service::Chain
-    depends_on: [ vnf_Attacker, vnf_vSA, vnf_vProxy, vnf_vSA_out2_port, vnf_vSA_in_port ,vnf_vProxy_out2_port, vnf_Attacker_in_port ]
+    depends_on: [ vnf_Attacker, vnf_vSA, vnf_vProxy, vnf_vProxy_out2_port, vnf_Attacker_in_port, vnf_vSA_out2_port, vnf_vSA_in_port  ]
     properties:
-      neutron_ports: [ get_resource: vnf_vSA_out2_port, get_resource: vnf_vSA_in_port ]
+      neutron_ports: [  get_resource: vnf_vProxy_out2_port, get_resource: vnf_Attacker_in_port , get_resource: vnf_vSA_out2_port, get_resource: vnf_vSA_in_port ]
       odl_username : { get_param: odl_username }
       odl_password: { get_param: odl_password }
       netfloc_ip_port: { get_param: netfloc_ip_port }
