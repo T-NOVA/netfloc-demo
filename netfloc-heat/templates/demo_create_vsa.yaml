@@ -1,0 +1,178 @@
+heat_template_version: 2014-10-16
+
+description: Template to create service chain (vSA VProxy) demo with 3 VNFs
+parameters:
+  image_vSA:
+    type: string
+    label: Image for the vSA (virtual security appliance) VNF
+    description: Image to use for the vSA VNF
+    default: vSA firewall 5.4
+
+  image_vProxy:
+    type: string
+    label: Image for the vProxy (Proxy as a Service) VNF
+    description: Image to use for the vProxy VNF
+    default: vProxy
+
+  image_vAT:
+    type: string
+    label: Image for the demo client attacker
+    description: Ubuntu Image to use show case 
+    default: vATTacker
+
+  flavor:
+    type: string
+    label: VMs flavor
+    description: Must be a valid OpenStack flavor
+    default: m1.medium
+    constraints:
+      - allowed_values:
+        - m1.medium
+
+  odl_username:
+    type: string
+    label: ODL User Name
+    default: admin
+    description: User name for Open Daylight (ODL) Restconf access
+
+  odl_password:
+    type: string
+    label: ODL Password
+    default: admin
+    description: Password for ODL Restconf access
+
+  netfloc_ip_port:
+    type: string
+    label: Netfloc IP and port number
+    default: "10.30.0.61:8181"
+    description: IP and port of the Netfloc node
+
+resources:
+
+  vnf_in_network:
+    type: OS::Neutron::Net
+    properties:
+      name: vnf_in_network
+
+  vnf_in_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      name: vnf_in_subnet
+      network_id:
+        get_resource: vnf_in_network
+      cidr: 192.168.1.0/24
+      gateway_ip: 192.168.1.1
+
+  vnf_vSA_in_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id:
+        get_resource: vnf_in_network
+      fixed_ips:
+        - subnet_id:
+            get_resource: vnf_in_subnet
+
+  vnf_Attacker_in_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id:
+        get_resource: vnf_in_network
+      fixed_ips:
+        - subnet_id:
+            get_resource: vnf_in_subnet
+
+  vnf_out2_network:
+    type: OS::Neutron::Net
+    properties:
+      name: vnf_out2_network
+
+  vnf_out2_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      name: vnf_out2_subnet
+      network_id:
+        get_resource: vnf_out2_network
+      cidr: 192.168.3.0/24
+      gateway_ip: 192.168.3.1
+
+  vnf_vSA_out2_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id:
+        get_resource: vnf_out2_network
+      fixed_ips:
+        - subnet_id:
+            get_resource: vnf_out2_subnet
+
+  vnf_vProxy_out2_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id:
+        get_resource: vnf_out2_network
+      fixed_ips:
+        - subnet_id:
+            get_resource: vnf_out2_subnet
+
+  vnf_vProxy_floating_ip_port:
+    type: OS::Neutron::Port
+    properties:
+      network: private_network
+      fixed_ips:
+        - subnet: private_subnet
+
+  vnf_vProxy_f_floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network: public
+      port_id:
+          get_resource: vnf_vProxy_floating_ip_port
+
+  vnf_Attacker:
+    type: OS::Nova::Server
+    properties:
+      name: vAT
+      image:
+        get_param: image_vAT
+      flavor:
+        get_param: flavor
+      availability_zone: nova:control
+      networks:       
+        - port:
+            get_resource: vnf_Attacker_in_port
+ 
+  vnf_vSA:
+    type: OS::Nova::Server
+    properties:
+      name: vSA
+      image:
+        get_param: image_vSA
+      flavor:
+        get_param: flavor
+      availability_zone: nova:control
+      networks:       
+        - port:
+            get_resource: vnf_vSA_in_port
+        - port:
+            get_resource: vnf_vSA_out2_port
+  vnf_vProxy:
+    type: OS::Nova::Server
+    properties:
+      name: vProxy
+      image:
+        get_param: image_vProxy
+      flavor:
+        get_param: flavor
+      availability_zone: nova:control
+      networks:
+        - port:
+            get_resource: vnf_vProxy_floating_ip_port
+        - port:
+            get_resource: vnf_vProxy_out2_port
+  chain3_create:
+    type: Netfloc::Service::Chain
+    depends_on: [ vnf_Attacker, vnf_vSA, vnf_vProxy, vnf_vProxy_out2_port, vnf_Attacker_in_port, vnf_vSA_out2_port, vnf_vSA_in_port  ]
+    properties:
+      neutron_ports: [  get_resource: vnf_vProxy_out2_port, get_resource: vnf_Attacker_in_port , get_resource: vnf_vSA_out2_port, get_resource: vnf_vSA_in_port ]
+      odl_username : { get_param: odl_username }
+      odl_password: { get_param: odl_password }
+      netfloc_ip_port: { get_param: netfloc_ip_port }

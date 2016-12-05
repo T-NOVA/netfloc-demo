@@ -26,6 +26,24 @@ parameters:
     description: Image to use for the vSF VNF
     default: vSF-7.6.2016
 
+  image_vSA:
+    type: string
+    label: Image for the vSA (virtual security appliance) VNF
+    description: Image to use for the vSA VNF
+    default: vSA firewall 5.4
+
+  image_vProxy:
+    type: string
+    label: Image for the vProxy (Proxy as a Service) VNF
+    description: Image to use for the vProxy VNF
+    default: vProxy
+
+  image_vAT:
+    type: string
+    label: Image for the demo client attacker
+    description: Ubuntu Image to use show case 
+    default: vATTacker
+
   sshkey:
     type: string
     label: VMs ssh key
@@ -208,14 +226,6 @@ resources:
         - subnet_id:
             get_resource: private_subnet
 
-  vnf_vSF_floating_ip:
-    type: OS::Neutron::FloatingIP
-    properties:
-      floating_network_id:
-        get_param: public_network
-      port_id:
-        get_resource: vnf_vSF_floating_ip_port
-
   vnf_vTC_f:
     type: OS::Nova::Server
     properties:
@@ -251,7 +261,6 @@ resources:
             get_resource: vnf_vTC_out1_port
         - port:
             get_resource: vnf_vTC_out2_port
-
 
   vnf_vMT:
     type: OS::Nova::Server
@@ -361,6 +370,97 @@ resources:
       subnet:
         get_resource: private_subnet
 
+  vnf_vSA_in_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id:
+        get_resource: vnf_in_network
+      fixed_ips:
+        - subnet_id:
+            get_resource: vnf_in_subnet
+
+  vnf_Attacker_in_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id:
+        get_resource: vnf_in_network
+      fixed_ips:
+        - subnet_id:
+            get_resource: vnf_in_subnet
+
+  vnf_vSA_out2_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id:
+        get_resource: vnf_out2_network
+      fixed_ips:
+        - subnet_id:
+            get_resource: vnf_out2_subnet
+
+  vnf_vProxy_out2_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id:
+        get_resource: vnf_out2_network
+      fixed_ips:
+        - subnet_id:
+            get_resource: vnf_out2_subnet
+
+  vnf_vProxy_floating_ip_port:
+    type: OS::Neutron::Port
+    properties:
+      network: private_network
+      fixed_ips:
+        - subnet: private_subnet
+
+  vnf_vProxy_f_floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network: public
+      port_id:
+          get_resource: vnf_vProxy_floating_ip_port
+
+  vnf_Attacker:
+    type: OS::Nova::Server
+    properties:
+      name: vAT
+      image:
+        get_param: image_vAT
+      flavor:
+        get_param: flavor
+      availability_zone: nova:control
+      networks:       
+        - port:
+            get_resource: vnf_Attacker_in_port
+ 
+  vnf_vSA:
+    type: OS::Nova::Server
+    properties:
+      name: vSA
+      image:
+        get_param: image_vSA
+      flavor:
+        get_param: flavor
+      availability_zone: nova:control
+      networks:       
+        - port:
+            get_resource: vnf_vSA_in_port
+        - port:
+            get_resource: vnf_vSA_out2_port
+  vnf_vProxy:
+    type: OS::Nova::Server
+    properties:
+      name: vProxy
+      image:
+        get_param: image_vProxy
+      flavor:
+        get_param: flavor
+      availability_zone: nova:control
+      networks:
+        - port:
+            get_resource: vnf_vProxy_floating_ip_port
+        - port:
+            get_resource: vnf_vProxy_out2_port
   chain1_create:
     type: Netfloc::Service::Chain
     depends_on: [ vnf_vTC, vnf_vTC_f, vnf_vSF, vnf_vTC_out1_port, vnf_vTC_f_in_port, vnf_vTC_f_out_port, vnf_vSF_in_port ]
@@ -379,6 +479,14 @@ resources:
       odl_password: { get_param: odl_password }
       netfloc_ip_port: { get_param: netfloc_ip_port }
 
+  chain3_create:
+    type: Netfloc::Service::Chain
+    depends_on: [ vnf_Attacker, vnf_vSA, vnf_vProxy, vnf_vProxy_out2_port, vnf_Attacker_in_port, vnf_vSA_out2_port, vnf_vSA_in_port  ]
+    properties:
+      neutron_ports: [  get_resource: vnf_vProxy_out2_port, get_resource: vnf_Attacker_in_port , get_resource: vnf_vSA_out2_port, get_resource: vnf_vSA_in_port ]
+      odl_username : { get_param: odl_username }
+      odl_password: { get_param: odl_password }
+      netfloc_ip_port: { get_param: netfloc_ip_port }
 outputs:
   vnf_vTC_out1_port:
     description: Chain1 - SFC port1
@@ -408,6 +516,14 @@ outputs:
     description: Chain1_Chain2 - SFC port4
     value:
       get_resource: vnf_vSF_in_port
+  vnf_vSA_in_port:
+    description: The IP address of the deployed instance
+    value:
+      get_resource: vnf_vSA_in_port
+  vnf_vSA_out2_port:
+    description: The IP address of the deployed instance
+    value:
+      get_resource: vnf_vSA_out2_port
   chain1_id:
     description: Normal traffic (vTC-vTC-f) chain ID
     value:
@@ -416,3 +532,7 @@ outputs:
     description: Video traffic (vTC-vMT) chain ID
     value:
       get_resource: chain2_create
+  chain3_id:
+    description: vSA (vSA-vProxy) chain ID
+    value:
+      get_resource: chain3_create
