@@ -1,0 +1,274 @@
+heat_template_version: 2014-10-16
+
+description: Template to create service chain (SFC) demo with 3 VNFs using Netfloc
+parameters:
+  image:
+    type: string
+    label: Image for the vTC-f (virtual traffic classifier - forwarding) VNF
+    description: Image to use for the vTC forwarder VNF
+    default: vTC-f
+
+  sshkey:
+    type: string
+    label: VMs ssh key
+    description: The ssh key for the VMs
+    default: irena_key
+
+  public_network:
+    type: string
+    label: Public network
+    description: ID of public network
+    default: a8018174-82af-42a7-a20c-bda13308a1b1
+
+  flavor:
+    type: string
+    label: VMs flavor
+    description: Must be a valid OpenStack flavor
+    default: m1.medium
+
+  odl_username:
+    type: string
+    label: ODL User Name
+    default: admin
+    description: User name for Open Daylight (ODL) Restconf access
+
+  odl_password:
+    type: string
+    label: ODL Password
+    default: admin
+    description: Password for ODL Restconf access
+
+  netfloc_ip_port:
+    type: string
+    label: Netfloc IP and port number
+    default: "10.2.0.5:8181"
+    description: IP and port of the Netfloc node
+
+resources:
+  vnf_vTC_f_in_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id:
+        get_resource: vnf_in_network
+      fixed_ips:
+        - subnet_id:
+            get_resource: vnf_in_subnet
+
+  vnf_vTC_f_out_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id:
+        get_resource: vnf_out_network
+      fixed_ips:
+        - subnet_id:
+            get_resource: vnf_out_subnet
+
+  vnf_alice_in_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id:
+        get_resource: vnf_in_network
+      fixed_ips:
+        - subnet_id:
+            get_resource: vnf_in_subnet
+
+  vnf_alice_out_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id:
+        get_resource: vnf_out_network
+      fixed_ips:
+        - subnet_id:
+            get_resource: vnf_out_subnet
+
+  vnf_bob_in_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id:
+        get_resource: vnf_in_network
+      fixed_ips:
+        - subnet_id:
+            get_resource: vnf_in_subnet
+
+  vnf_bob_out_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id:
+        get_resource: vnf_out_network
+      fixed_ips:
+        - subnet_id:
+            get_resource: vnf_out_subnet
+
+  vnf_vTC_f_floating_ip_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id:
+        get_resource: private_network
+      fixed_ips:
+        - subnet_id:
+            get_resource: private_subnet
+
+  vnf_vTC_f_floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network_id:
+        get_param: public_network
+      port_id:
+        get_resource: vnf_vTC_f_floating_ip_port
+
+  vnf_alice_floating_ip_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id:
+        get_resource: private_network
+      fixed_ips:
+        - subnet_id:
+            get_resource: private_subnet
+
+  vnf_alice_floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network_id:
+        get_param: public_network
+      port_id:
+        get_resource: vnf_alice_floating_ip_port
+
+  vnf_bob_floating_ip_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id:
+        get_resource: private_network
+      fixed_ips:
+        - subnet_id:
+            get_resource: private_subnet
+
+  vnf_bob_floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network_id:
+        get_param: public_network
+      port_id:
+        get_resource: vnf_bob_floating_ip_port
+
+  vnf_vTC_f:
+    type: OS::Nova::Server
+    properties:
+      name: vTC-f
+      key_name: { get_param: sshkey }
+      image:
+        get_param: image
+      flavor: m1.medium
+      networks:
+        - port:
+            get_resource: vnf_vTC_f_floating_ip_port
+        - port:
+            get_resource: vnf_vTC_f_in_port
+        - port:
+            get_resource: vnf_vTC_f_out_port
+
+  vnf_alice:
+    type: OS::Nova::Server
+    properties:
+      name: Alice
+      key_name: { get_param: sshkey }
+      image:
+        get_param: image
+      flavor:
+        get_param: flavor
+      networks:
+        - port:
+            get_resource: vnf_alice_floating_ip_port
+        - port:
+            get_resource: vnf_alice_in_port
+        - port:
+            get_resource: vnf_alice_out_port
+
+  vnf_bob:
+    type: OS::Nova::Server
+    properties:
+      name: Bob
+      key_name: { get_param: sshkey }
+      image:
+        get_param: image
+      flavor:
+        get_param: flavor
+      networks:
+        - port:
+            get_resource: vnf_bob_floating_ip_port
+        - port:
+            get_resource: vnf_bob_in_port
+        - port:
+            get_resource: vnf_bob_out_port
+
+  private_network:
+    type: OS::Neutron::Net
+    properties:
+      name: private_network
+
+  private_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      name: private_subnet
+      network_id:
+        get_resource: private_network
+      cidr: 13.13.13.0/24
+      gateway_ip: 13.13.13.1
+
+  vnf_in_network:
+    type: OS::Neutron::Net
+    properties:
+      name: vnf_in_network
+
+  vnf_in_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      name: vnf_in_subnet
+      network_id:
+        get_resource: vnf_in_network
+      cidr: 192.168.1.0/24
+      gateway_ip: 192.168.1.1
+
+  vnf_out_network:
+    type: OS::Neutron::Net
+    properties:
+      name: vnf_out_network
+
+  vnf_out_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      name: vnf_out_subnet
+      network_id:
+        get_resource: vnf_out_network
+      cidr: 192.168.2.0/24
+      gateway_ip: 192.168.2.1
+
+  router:
+    type: OS::Neutron::Router
+    properties:
+      name: Router1
+      external_gateway_info:
+        network:
+          get_param: public_network
+
+  router_interface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router_id:
+        get_resource: router
+      subnet:
+        get_resource: private_subnet
+
+  chain_create:
+    type: Netfloc::Service::Chain
+    depends_on: [ vnf_vTC_f, vnf_alice, vnf_bob, vnf_vTC_f_in_port, vnf_vTC_f_out_port, vnf_alice_in_port, vnf_alice_out_port, vnf_bob_in_port, vnf_bob_out_port ]
+    properties:
+      neutron_ports: [ get_resource: vnf_alice_in_port, get_resource: vnf_vTC_f_in_port, get_resource: vnf_vTC_f_out_port, get_resource: vnf_bob_out_port ]
+      odl_username : { get_param: odl_username }
+      odl_password: { get_param: odl_password }
+      netfloc_ip_port: { get_param: netfloc_ip_port }
+
+outputs:
+  chain_id:
+    description: Chain ID
+    value:
+      get_resource: chain_create
